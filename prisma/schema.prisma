@@ -126,6 +126,7 @@ model TestRun {
   startedAt   DateTime?
   completedAt DateTime?
   createdAt   DateTime      @default(now())
+  aiAnalysis  Json?
 
   project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   testResults TestResult[]
