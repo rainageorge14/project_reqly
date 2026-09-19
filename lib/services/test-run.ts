@@ -4,6 +4,7 @@ import { logAudit } from "@/lib/services/audit";
 import { enrichTestCase, EnrichedTestCase } from "@/lib/services/test-case";
 import { executeTestSuite } from "@/lib/api-testing";
 import { TestRunStatus, TestResultStatus } from "@prisma/client";
+import { FailureAnalysis } from "@/lib/ai/failure-analysis-schema";
 
 export interface CreateRunOptions {
   testCaseIds?: string[];
@@ -36,6 +37,7 @@ export interface EnrichedTestRun {
   startedAt: string | null;
   completedAt: string | null;
   createdAt: string;
+  aiAnalysis?: FailureAnalysis | null;
   results: EnrichedTestResult[];
 }
 
@@ -181,6 +183,7 @@ export async function createAndExecuteTestRun(
     startedAt: initialRun.startedAt ? initialRun.startedAt.toISOString() : null,
     completedAt: completedAt.toISOString(),
     createdAt: initialRun.createdAt.toISOString(),
+    aiAnalysis: null,
     results: formattedResults,
   };
 }
@@ -250,6 +253,7 @@ export async function getProjectTestRuns(
       startedAt: run.startedAt ? run.startedAt.toISOString() : null,
       completedAt: run.completedAt ? run.completedAt.toISOString() : null,
       createdAt: run.createdAt.toISOString(),
+      aiAnalysis: (run.aiAnalysis as unknown as FailureAnalysis) || null,
       results,
     };
   });

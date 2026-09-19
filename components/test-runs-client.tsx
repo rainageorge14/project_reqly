@@ -17,6 +17,9 @@ import {
   History,
   Check,
   Search,
+  Sparkles,
+  Wrench,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +80,18 @@ function formatDuration(ms: number): string {
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
+function getConfidenceBadge(confidence: "LOW" | "MEDIUM" | "HIGH") {
+  switch (confidence) {
+    case "HIGH":
+      return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+    case "MEDIUM":
+      return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+    case "LOW":
+    default:
+      return "bg-zinc-500/10 text-zinc-400 border-zinc-500/30";
+  }
+}
+
 export function TestRunsClient({
   projectId,
   baseUrl,
@@ -90,6 +105,33 @@ export function TestRunsClient({
   const [isRunning, setIsRunning] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // AI Failure Analysis states
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  const handleAnalyzeFailures = async (runId: string) => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/runs/${runId}/analyze`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to analyze test failures.");
+      }
+      setRuns((prev) =>
+        prev.map((r) => (r.id === runId ? { ...r, aiAnalysis: json.analysis } : r))
+      );
+    } catch (err: unknown) {
+      setAnalysisError(
+        err instanceof Error ? err.message : "Failure analysis failed."
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Selection mode for individual tests
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -562,6 +604,203 @@ export function TestRunsClient({
               </div>
             </div>
           </div>
+
+          {/* AI Failure Analysis Panel */}
+          {currentRun.failed > 0 ? (
+            <div className="rounded-xl border border-indigo-500/20 bg-indigo-950/10 p-5 space-y-4">
+              {/* Header */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                      AI Failure Intelligence
+                      {currentRun.aiAnalysis && (
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-mono uppercase ${getConfidenceBadge(
+                            currentRun.aiAnalysis.confidence
+                          )}`}
+                        >
+                          {currentRun.aiAnalysis.confidence} Confidence
+                        </Badge>
+                      )}
+                    </h3>
+                    <p className="text-xs text-zinc-400">
+                      Gemini automated root-cause analysis based on real test failures.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={() => handleAnalyzeFailures(currentRun.id)}
+                  disabled={isAnalyzing}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs gap-1.5 shrink-0 self-start sm:self-auto"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RotateCw className="h-3.5 w-3.5 animate-spin" />
+                      Diagnosing Failures...
+                    </>
+                  ) : currentRun.aiAnalysis ? (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Re-analyze Failures
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Analyze Failures with AI
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Error Message */}
+              {analysisError && (
+                <div className="flex items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-950/20 px-4 py-2.5 text-xs text-rose-300">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-rose-400" />
+                  <span>{analysisError}</span>
+                </div>
+              )}
+
+              {/* Loading State Banner */}
+              {isAnalyzing && (
+                <div className="rounded-lg border border-indigo-500/30 bg-indigo-950/30 p-4 text-xs text-indigo-200 flex items-center gap-3">
+                  <RotateCw className="h-4 w-4 animate-spin text-indigo-400 shrink-0" />
+                  <div>
+                    <span className="font-medium text-indigo-100">
+                      Correlating failure signals...
+                    </span>
+                    <p className="text-[11px] text-indigo-300/80 mt-0.5">
+                      Extracting status codes, headers, and error traces, then scrubbing credentials and analyzing with Gemini AI.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Analyzed Result Body */}
+              {currentRun.aiAnalysis ? (
+                <div className="space-y-4 pt-1">
+                  {/* Summary & Category */}
+                  <div className="rounded-lg border border-zinc-800 bg-zinc-950/80 p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-zinc-300">
+                        Primary Category:
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="border-indigo-500/30 bg-indigo-500/10 text-indigo-300 font-mono text-[11px]"
+                      >
+                        {currentRun.aiAnalysis.category}
+                      </Badge>
+                    </div>
+                    <p className="text-xs leading-relaxed text-zinc-200">
+                      {currentRun.aiAnalysis.summary}
+                    </p>
+                  </div>
+
+                  {/* Causes & Fixes Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Possible Causes */}
+                    <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-4 space-y-2">
+                      <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                        Possible Root Causes
+                      </span>
+                      <ul className="space-y-1.5 text-xs text-zinc-400">
+                        {currentRun.aiAnalysis.possibleCauses.map((cause, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-indigo-400 mt-0.5">•</span>
+                            <span>{cause}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Recommended Fixes */}
+                    <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/60 p-4 space-y-2">
+                      <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                        <Wrench className="h-3.5 w-3.5 text-emerald-400" />
+                        Recommended Actions
+                      </span>
+                      <ul className="space-y-1.5 text-xs text-zinc-300">
+                        {currentRun.aiAnalysis.recommendedFixes.map((fix, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-emerald-400 mt-0.5">✓</span>
+                            <span>{fix}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Concrete Evidence Observed */}
+                  {currentRun.aiAnalysis.evidence.length > 0 && (
+                    <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/40 p-3 space-y-1.5">
+                      <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                        Observed Evidence
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {currentRun.aiAnalysis.evidence.map((ev, idx) => (
+                          <span
+                            key={idx}
+                            className="rounded bg-zinc-900 px-2 py-0.5 font-mono text-[11px] text-zinc-300 border border-zinc-800"
+                          >
+                            {ev}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Analysis Limitations Callout */}
+                  {currentRun.aiAnalysis.limitations &&
+                    currentRun.aiAnalysis.limitations.length > 0 && (
+                      <div className="flex items-start gap-2.5 rounded-lg border border-zinc-800/60 bg-zinc-900/20 p-3 text-[11px] text-zinc-500">
+                        <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-zinc-400" />
+                        <div className="space-y-0.5">
+                          <span className="font-medium text-zinc-400">
+                            Diagnostic Boundaries:
+                          </span>
+                          <ul className="list-disc list-inside space-y-0.5 text-zinc-500">
+                            {currentRun.aiAnalysis.limitations.map((lim, idx) => (
+                              <li key={idx}>{lim}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                </div>
+              ) : !isAnalyzing ? (
+                /* Unanalyzed Prompt Banner */
+                <div className="flex items-center justify-between rounded-lg border border-indigo-500/20 bg-indigo-950/20 p-4 text-xs">
+                  <div className="text-zinc-300">
+                    <span className="font-medium text-indigo-300">
+                      {currentRun.failed} test failure(s) detected.
+                    </span>{" "}
+                    Run AI failure analysis to generate an automated root-cause diagnosis and actionable fix recommendations.
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            /* Zero Failures State */
+            <div className="flex items-center gap-3 rounded-lg border border-emerald-500/20 bg-emerald-950/10 p-4 text-xs text-emerald-300">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+              <div>
+                <span className="font-semibold text-emerald-200">
+                  All tests passed cleanly.
+                </span>{" "}
+                <span className="text-emerald-400/80">
+                  Zero failures or regressions detected in this test run.
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Filter Bar */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-zinc-800/80 bg-zinc-900/40 p-3.5">
