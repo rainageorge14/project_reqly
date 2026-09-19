@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
-import { PlayCircle, Info } from "lucide-react";
-import { EmptyState } from "@/components/empty-state";
 import { requireAuth } from "@/lib/auth";
 import { getProjectById } from "@/lib/services/project";
+import { getProjectTestCases } from "@/lib/services/test-case";
+import { getProjectTestRuns } from "@/lib/services/test-run";
+import { TestRunsClient } from "@/components/test-runs-client";
 
 interface RunsPageProps {
   params: Promise<{ projectId: string }>;
@@ -17,29 +18,18 @@ export default async function ProjectRunsPage({ params }: RunsPageProps) {
     notFound();
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3 rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-4 text-xs text-zinc-400">
-        <Info className="h-4 w-4 shrink-0 text-zinc-500 mt-0.5" />
-        <div>
-          <span className="font-medium text-zinc-200">Execution History</span>
-          <p className="mt-0.5 leading-relaxed">
-            Historical test runs, assertion latencies, pass/fail breakdowns, and
-            status codes will be cataloged here once test execution is wired in.
-          </p>
-        </div>
-      </div>
+  // Load available test cases and past execution runs
+  const [testData, runs] = await Promise.all([
+    getProjectTestCases(projectId, user.id),
+    getProjectTestRuns(projectId, user.id, 20),
+  ]);
 
-      <EmptyState
-        icon={PlayCircle}
-        title="No test runs recorded"
-        description="Run your first verification batch once test suites are initialized to see execution metrics and timelines."
-        secondaryAction={
-          <div className="rounded border border-zinc-800 bg-zinc-950 px-3 py-1.5 font-mono text-[11px] text-zinc-500">
-            Execution Runner • Scheduled for Phase 3
-          </div>
-        }
-      />
-    </div>
+  return (
+    <TestRunsClient
+      projectId={projectId}
+      baseUrl={project.baseUrl}
+      initialRuns={runs || []}
+      availableTestCases={testData?.testCases || []}
+    />
   );
 }
