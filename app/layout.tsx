@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TestPilot — AI-Powered API Testing & Security Intelligence",
+  title: "Reqly — AI-Powered API Testing & Security Intelligence",
   description:
     "AI-powered API testing, security analysis, and failure intelligence in one workspace.",
 };

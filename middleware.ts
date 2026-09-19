@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const COOKIE_NAME = "testpilot_session";
+const COOKIE_NAME = "reqly_session";
 
 function getSecretKey(): Uint8Array {
   const secret =
     process.env.SESSION_SECRET ||
-    "testpilot-fallback-secret-key-that-is-at-least-32-chars-long";
+    "reqly-fallback-secret-key-that-is-at-least-32-chars-long";
   return new TextEncoder().encode(secret);
 }
 

@@ -75,7 +75,7 @@ export default async function HomePage() {
                   <span className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
                   <span className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
                   <span className="ml-2 font-mono text-[11px] text-zinc-500">
-                    testpilot-cli — api-runner
+                    reqly-cli — api-runner
                   </span>
                 </div>
                 <span className="font-mono text-[11px] text-zinc-600">
@@ -86,7 +86,7 @@ export default async function HomePage() {
                 <div className="flex items-center gap-2 text-zinc-500">
                   <span>$</span>
                   <span className="text-zinc-300">
-                    testpilot test --target https://api.payments.internal
+                    reqly test --target https://api.payments.internal
                   </span>
                 </div>
                 <div className="mt-2 text-zinc-400">
@@ -224,7 +224,7 @@ export default async function HomePage() {
               Ready to verify your APIs?
             </h2>
             <p className="mt-2 text-xs text-zinc-400">
-              Deploy TestPilot locally, connect your OpenAPI specs, and manage
+              Deploy Reqly locally, connect your OpenAPI specs, and manage
               your services from a unified workspace.
             </p>
             <div className="mt-6 flex justify-center gap-3">
@@ -255,7 +255,7 @@ export default async function HomePage() {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-zinc-400" />
-            <span className="font-medium text-zinc-300">TestPilot</span>
+            <span className="font-medium text-zinc-300">Reqly</span>
             <span className="text-zinc-600">—</span>
             <span>API Testing & Security Intelligence</span>
           </div>

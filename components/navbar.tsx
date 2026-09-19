@@ -46,7 +46,7 @@ export function Navbar({ user }: NavbarProps) {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold tracking-tight text-white">
-                TestPilot
+                Reqly
               </span>
               <span className="rounded border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 text-[10px] font-mono text-zinc-400">
                 preview

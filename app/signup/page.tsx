@@ -58,7 +58,7 @@ export default function SignupPage() {
               <ShieldCheck className="h-5 w-5 text-emerald-400" />
             </div>
             <span className="text-lg font-semibold tracking-tight text-white">
-              TestPilot
+              Reqly
             </span>
           </Link>
           <h2 className="mt-6 text-xl font-semibold tracking-tight text-white">

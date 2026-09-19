@@ -8,13 +8,13 @@ export interface SessionUser {
   name: string | null;
 }
 
-const COOKIE_NAME = "testpilot_session";
+const COOKIE_NAME = "reqly_session";
 const SESSION_EXPIRY_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 function getSecretKey(): Uint8Array {
   const secret =
     process.env.SESSION_SECRET ||
-    "testpilot-fallback-secret-key-that-is-at-least-32-chars-long";
+    "reqly-fallback-secret-key-that-is-at-least-32-chars-long";
   return new TextEncoder().encode(secret);
 }
 
