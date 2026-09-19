@@ -1,0 +1,183 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  DELETE
+  PATCH
+  OPTIONS
+  HEAD
+}
+
+enum TestSource {
+  MANUAL
+  AI_GENERATED
+}
+
+enum TestRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum TestResultStatus {
+  PASSED
+  FAILED
+  WARNING
+  ERROR
+}
+
+enum SecuritySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SecurityStatus {
+  OPEN
+  RESOLVED
+  MUTED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String?
+  email        String     @unique
+  passwordHash String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  projects     Project[]
+  auditLogs    AuditLog[]
+
+  @@index([email])
+}
+
+model Project {
+  id               String            @id @default(cuid())
+  name             String
+  description      String?
+  baseUrl          String
+  userId           String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiSpecs         ApiSpec[]
+  testCases        TestCase[]
+  testRuns         TestRun[]
+  securityFindings SecurityFinding[]
+
+  @@index([userId])
+}
+
+model ApiSpec {
+  id             String   @id @default(cuid())
+  projectId      String
+  name           String
+  content        String   @db.Text
+  version        String
+  openapiVersion String?  @default("3.0.0")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt @default(now())
+
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model TestCase {
+  id             String       @id @default(cuid())
+  projectId      String
+  name           String
+  method         HttpMethod
+  endpoint       String
+  headers        Json?
+  body           Json?
+  expectedStatus Int
+  category       String
+  source         TestSource   @default(MANUAL)
+  createdAt      DateTime     @default(now())
+
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testResults    TestResult[]
+
+  @@index([projectId])
+  @@index([method])
+}
+
+model TestRun {
+  id          String        @id @default(cuid())
+  projectId   String
+  status      TestRunStatus @default(PENDING)
+  totalTests  Int           @default(0)
+  passed      Int           @default(0)
+  failed      Int           @default(0)
+  warnings    Int           @default(0)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime      @default(now())
+
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testResults TestResult[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model TestResult {
+  id           String           @id @default(cuid())
+  runId        String
+  testCaseId   String
+  status       TestResultStatus
+  actualStatus Int?
+  responseTime Int?
+  error        String?          @db.Text
+  createdAt    DateTime         @default(now())
+
+  testRun      TestRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  testCase     TestCase         @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([testCaseId])
+}
+
+model SecurityFinding {
+  id             String           @id @default(cuid())
+  projectId      String
+  endpoint       String
+  severity       SecuritySeverity
+  title          String
+  description    String           @db.Text
+  recommendation String           @db.Text
+  status         SecurityStatus   @default(OPEN)
+  createdAt      DateTime         @default(now())
+
+  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([severity])
+  @@index([status])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+}

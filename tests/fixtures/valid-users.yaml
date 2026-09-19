@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: Users Microservice
+  version: 2.1.0
+  description: Authentication and User management service
+servers:
+  - url: https://users.internal/api/v2
+tags:
+  - name: Users
+    description: User directory operations
+  - name: Health
+    description: System liveness and readiness
+paths:
+  /healthz:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+  /api/v2/users:
+    get:
+      tags:
+        - Users
+      summary: Query user list
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of users
+    post:
+      tags:
+        - Users
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Invalid payload

@@ -1,0 +1,11 @@
+openapi: 3.0.0
+info:
+  title: Broken YAML
+  version: 1.0.0
+paths:
+  /broken:
+    get:
+      summary: [invalid: yaml: unbalanced: brackets
+        bad_indent:
+      - 1
+       - 2
